@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>HKC 브리핑</title>
+<script>
+// 앱 설정 — API 키는 UI에서 입력하여 브라우저(localStorage)에 저장됩니다
+(function(){
+  var saved = localStorage.getItem('hkc_claude_key') || '';
+  window.HKC_CONFIG = {
+    CLAUDE_API_KEY: saved,
+    CLAUDE_MODEL:   localStorage.getItem('hkc_model') || 'claude-haiku-4-5-20251001',
+    COMPANY_NAME:   '주식회사 한국클라우드',
+    DEPT_NAME:      '영업마케팅본부',
+    APP_VERSION:    '3.0',
+    MONTHS_BACK:    3,
+    MAX_TOKENS:     2500,
+    HKC_BUSINESS: [
+      '클라우드 인프라(IaaS/PaaS/SaaS) 구축·관리',
+      'AI/빅데이터 솔루션 구축',
+      '디지털 전환(DX) 컨설팅',
+      'IT 아웃소싱 및 관리형 서비스(MSP)',
+      '사이버보안 솔루션',
+      '전사적 업무자동화(AX)',
+      '전산 시스템 유지보수 및 운영'
+    ]
+  };
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--sf:#161b22;--sf2:#1c2333;--bd:rgba(255,255,255,.07);
+  --gold:#c8a84c;--gd:rgba(200,168,76,.12);--gl:#e8c96a;
+  --cream:#e8edf2;--gray:#7d8fa3;--gray2:#a8b8c8;
+  --red:#cf4545;--rd:rgba(207,69,69,.12);
+  --green:#3aaa70;--grd:rgba(58,170,112,.12);
+  --blue:#3a88c8;--bd2:rgba(58,136,200,.12);
+  --sb:env(safe-area-inset-bottom,16px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--cream);font-size:14px;}
+.app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Topbar */
+.topbar{background:var(--sf);border-bottom:1px solid var(--bd);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;position:relative;}
+.topbar::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gl) 40%,transparent);}
+.tl{display:flex;align-items:center;gap:9px;}
+.tlogo{width:30px;height:30px;background:linear-gradient(135deg,var(--gold),var(--gl));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--bg);}
+.tname{font-size:14px;font-weight:700;color:var(--cream);line-height:1.2;}
+.tsub{font-size:9px;color:var(--gold);letter-spacing:.5px;}
+.tr{display:flex;align-items:center;gap:7px;}
+.tdate{font-size:11px;color:var(--gray);text-align:right;line-height:1.5;}
+.tmodel{font-size:9px;color:#68b0e8;background:var(--bd2);border:1px solid rgba(58,136,200,.3);border-radius:4px;padding:2px 7px;font-weight:600;}
+
+/* Status bar */
+.status-bar{background:var(--sf2);border-bottom:1px solid var(--bd);padding:6px 16px;flex-shrink:0;display:flex;align-items:center;gap:8px;}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.stxt{font-size:11px;color:var(--gray2);}
+.sdot-ok{background:var(--green);box-shadow:0 0 6px rgba(58,170,112,.6);}
+.sdot-err{background:var(--red);box-shadow:0 0 6px rgba(207,69,69,.6);}
+.sdot-warn{background:var(--gold);box-shadow:0 0 6px rgba(200,168,76,.6);}
+
+/* Search area */
+.search-area{background:var(--sf);padding:11px 16px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.sa-row{display:flex;gap:8px;margin-bottom:7px;}
+.sinput{flex:1;background:var(--bg);border:1.5px solid rgba(200,168,76,.3);border-radius:10px;padding:11px 14px;font-family:'Noto Sans KR',sans-serif;font-size:15px;color:var(--cream);outline:none;-webkit-appearance:none;transition:border-color .2s;}
+.sinput:focus{border-color:var(--gold);}
+.sinput::placeholder{color:var(--gray);font-size:13px;}
+.sbtn{background:linear-gradient(135deg,var(--gold),var(--gl));border:none;border-radius:10px;width:46px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 3px 12px rgba(200,168,76,.3);flex-shrink:0;}
+.sbtn:active:not(:disabled){transform:scale(.93);}
+.sbtn:disabled{opacity:.4;}
+.u-row{display:flex;align-items:center;gap:8px;}
+.u-lbl{font-size:11px;color:var(--gray);white-space:nowrap;}
+.u-inp{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:8px;padding:6px 11px;font-size:12px;color:var(--cream);outline:none;font-family:'Noto Sans KR',sans-serif;-webkit-appearance:none;}
+.u-inp::placeholder{color:var(--gray);font-size:11px;}
+
+/* History chips */
+.hist-bar{display:flex;gap:7px;overflow-x:auto;padding:8px 16px;background:var(--sf);border-bottom:1px solid var(--bd);flex-shrink:0;scrollbar-width:none;}
+.hist-bar::-webkit-scrollbar{display:none;}
+.hchip{background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:16px;padding:5px 12px;font-size:11px;color:var(--gray2);white-space:nowrap;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.hchip:active{background:var(--gd);border-color:rgba(200,168,76,.3);color:var(--gl);}
+
+/* Content */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + var(--sb));}
+
+/* Empty */
+.empty-s{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:32px;text-align:center;opacity:.5;}
+.empty-s .ei{font-size:52px;}
+.empty-s .et{font-family:'Noto Serif KR',serif;font-size:16px;color:var(--gray2);}
+.empty-s .es{font-size:12px;color:var(--gray);line-height:1.75;}
+
+/* Loading */
+.loading-s{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:22px;padding:32px;text-align:center;}
+.sw{position:relative;width:60px;height:60px;}
+.swo{width:60px;height:60px;border:2px solid rgba(200,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin 1.2s linear infinite;position:absolute;}
+.swi{width:44px;height:44px;border:2px solid rgba(200,168,76,.06);border-bottom-color:var(--gl);border-radius:50%;animation:spin .8s linear infinite reverse;position:absolute;top:8px;left:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.lco{font-family:'Noto Serif KR',serif;font-size:18px;color:var(--gold);}
+.psteps{display:flex;flex-direction:column;gap:9px;width:240px;}
+.ps{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--gray);transition:color .3s;}
+.ps.active{color:var(--cream);} .ps.done{color:var(--green);}
+.psd{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);flex-shrink:0;transition:all .3s;}
+.ps.active .psd{background:var(--gold);animation:pulse .9s ease-in-out infinite alternate;}
+.ps.done .psd{background:var(--green);}
+@keyframes pulse{from{transform:scale(1);}to{transform:scale(1.6);}}
+
+/* Error */
+.err-s{display:none;padding:24px 16px;text-align:center;}
+.err-m{font-size:13px;color:var(--gray2);line-height:1.75;}
+
+/* Sys warn */
+.sys-warn{margin:14px 16px;background:var(--rd);border:1px solid rgba(207,69,69,.3);border-radius:12px;padding:16px;}
+.sw-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:10px;}
+.sw-body{font-size:12px;color:var(--cream);line-height:1.7;}
+.sw-step{display:flex;gap:10px;margin-top:10px;align-items:flex-start;}
+.sw-num{width:22px;height:22px;background:rgba(207,69,69,.2);border:1px solid rgba(207,69,69,.4);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--red);flex-shrink:0;}
+.sw-txt{font-size:12px;color:var(--cream);line-height:1.6;}
+.mono-s{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:var(--gl);}
+
+/* Report */
+.report{display:none;animation:su .4s ease;}
+@keyframes su{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* Hero */
+.hero{background:linear-gradient(150deg,var(--sf2),var(--sf));padding:18px 16px 15px;border-bottom:1px solid var(--bd);position:relative;}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gl) 50%,transparent);}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;background:var(--gd);border:1px solid rgba(200,168,76,.3);border-radius:12px;padding:3px 10px;font-size:10px;color:var(--gold);font-weight:600;margin-bottom:8px;}
+.hero-co{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--cream);margin-bottom:2px;line-height:1.3;}
+.hero-ind{font-size:12px;color:var(--gray2);margin-bottom:11px;}
+.hero-chips{display:flex;gap:5px;flex-wrap:wrap;}
+.hc{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--gray2);}
+.hc-hi{background:var(--rd);border-color:rgba(207,69,69,.3);color:#ef6c6c;}
+.hc-mid{background:var(--gd);border-color:rgba(200,168,76,.3);color:var(--gl);}
+.hc-lo{background:var(--grd);border-color:rgba(58,170,112,.3);color:#5cc896;}
+.hc-ai{background:var(--bd2);border-color:rgba(58,136,200,.3);color:#68b0e8;}
+
+/* Sections */
+.sec{border-bottom:1px solid var(--bd);}
+.sec-toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;background:var(--sf);-webkit-user-select:none;user-select:none;}
+.sec-toggle:active{background:var(--sf2);}
+.stl{display:flex;align-items:center;gap:10px;}
+.sic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.si-g{background:var(--gd);}.si-b{background:var(--bd2);}.si-gr{background:var(--grd);}.si-r{background:var(--rd);}
+.sname{font-size:13px;font-weight:600;color:var(--cream);}
+.str{display:flex;align-items:center;gap:7px;}
+.sbadge{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:600;}
+.sb-b{background:var(--bd2);color:#68b0e8;border:1px solid rgba(58,136,200,.3);}
+.sb-g{background:var(--grd);color:#5cc896;border:1px solid rgba(58,170,112,.3);}
+.sb-y{background:var(--gd);color:var(--gl);border:1px solid rgba(200,168,76,.3);}
+.chev{font-size:11px;color:var(--gray);transition:transform .25s;font-style:normal;}
+.chev.open{transform:rotate(180deg);}
+.sec-body{display:none;background:var(--bg);padding:13px 16px;}
+.sec-body.open{display:block;animation:fi .2s ease;}
+@keyframes fi{from{opacity:0;}to{opacity:1;}}
+
+/* Summary */
+.sumbox{background:var(--sf);border:1px solid var(--bd);border-left:3px solid var(--gold);border-radius:0 9px 9px 0;padding:13px 15px;font-size:13px;line-height:1.85;color:var(--cream);white-space:pre-wrap;}
+
+/* News */
+.nitem{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:13px;margin-bottom:9px;}
+.nitem:last-child{margin-bottom:0;}
+.ntop{display:flex;align-items:flex-start;gap:9px;margin-bottom:7px;}
+.ndot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.nd-r{background:#ef6c6c;box-shadow:0 0 6px rgba(239,108,108,.5);}
+.nd-y{background:var(--gold);box-shadow:0 0 6px rgba(200,168,76,.5);}
+.nd-b{background:#68b0e8;box-shadow:0 0 6px rgba(104,176,232,.5);}
+.nd-gr{background:#5cc896;box-shadow:0 0 6px rgba(92,200,150,.5);}
+.nhdr{flex:1;}
+.ntitle{font-size:13px;font-weight:600;color:var(--cream);line-height:1.5;margin-bottom:3px;}
+.ntitle a{color:inherit;} .ntitle a:hover{color:var(--gl);}
+.nmeta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.nsrc{font-size:11px;color:var(--gray);background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:4px;padding:1px 6px;}
+.nsrc a{color:var(--gold);}
+.ndate{font-size:11px;color:var(--gray);}
+.nbadge{font-size:10px;padding:1px 7px;border-radius:8px;font-weight:600;}
+.nb-crit{background:var(--rd);color:#ef6c6c;} .nb-imp{background:var(--gd);color:var(--gl);} .nb-info{background:var(--bd2);color:#68b0e8;} .nb-pos{background:var(--grd);color:#5cc896;}
+.nbody{font-size:12px;color:var(--gray2);line-height:1.65;padding-left:16px;}
+
+/* Opp */
+.oitem{display:flex;gap:11px;margin-bottom:13px;align-items:flex-start;}
+.oitem:last-child{margin-bottom:0;}
+.onum{width:22px;height:22px;background:var(--grd);border:1px solid rgba(58,170,112,.3);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#5cc896;flex-shrink:0;}
+.otxt{font-size:13px;color:var(--cream);line-height:1.7;}
+.otxt strong{color:#5cc896;display:block;margin-bottom:2px;font-size:12px;}
+
+/* Act */
+.aitem{display:flex;align-items:center;gap:9px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;margin-bottom:7px;}
+.aitem:last-child{margin-bottom:0;}
+.apri{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0;}
+.ap-hi{background:var(--rd);color:#ef6c6c;border:1px solid rgba(207,69,69,.3);}
+.ap-mid{background:var(--gd);color:var(--gl);border:1px solid rgba(200,168,76,.3);}
+.ap-lo{background:var(--bd2);color:#68b0e8;border:1px solid rgba(58,136,200,.3);}
+.atxt{font-size:12px;color:var(--cream);line-height:1.55;}
+
+/* Talk */
+.titem{background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;margin-bottom:7px;font-size:12px;color:var(--cream);line-height:1.6;display:flex;gap:9px;}
+.titem:last-child{margin-bottom:0;}
+
+/* Bottom bar */
+.bottom-bar{background:var(--sf);border-top:1px solid var(--bd);padding:10px 16px;padding-bottom:calc(10px + var(--sb));display:flex;gap:8px;flex-shrink:0;}
+.bottom-bar.hidden{display:none;}
+.bbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:10px;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+.bbtn:active{transform:scale(.96);}
+.bb-share{background:var(--gd);border:1px solid rgba(200,168,76,.3);color:var(--gl);}
+.bb-print{background:rgba(255,255,255,.05);border:1px solid var(--bd);color:var(--gray2);}
+.bb-reset{background:rgba(207,69,69,.1);border:1px solid rgba(207,69,69,.25);color:#ef9090;}
+
+/* ── LOGIN OVERLAY ── */
+.login-ov{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0a0f1a,#0d1117 50%,#111820);display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-ov.hide{animation:lf .4s ease forwards;}
+@keyframes lf{to{opacity:0;pointer-events:none;}}
+.login-card{width:100%;max-width:340px;background:var(--sf);border:1px solid rgba(200,168,76,.25);border-radius:20px;padding:36px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;overflow:hidden;}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gl),var(--gold));}
+.l-logo{width:52px;height:52px;background:linear-gradient(135deg,var(--gold),var(--gl));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:var(--bg);margin:0 auto 14px;box-shadow:0 6px 18px rgba(200,168,76,.4);}
+.l-title{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;color:var(--cream);margin-bottom:3px;}
+.l-sub{font-size:11px;color:var(--gray);margin-bottom:24px;line-height:1.5;}
+.l-inp{width:100%;background:rgba(255,255,255,.05);border:1.5px solid var(--bd);border-radius:10px;padding:13px 16px;font-size:16px;color:var(--cream);outline:none;transition:all .25s;margin-bottom:12px;text-align:center;letter-spacing:4px;font-family:'Noto Sans KR',sans-serif;-webkit-appearance:none;}
+.l-inp::placeholder{letter-spacing:0;color:var(--gray);font-size:13px;}
+.l-inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,168,76,.12);}
+.l-inp.shake{animation:lshake .4s ease;}
+@keyframes lshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+.l-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gl));color:var(--bg);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.l-err{font-size:12px;color:#ef6c6c;margin-top:10px;min-height:16px;}
+.l-hint{font-size:11px;color:var(--gray);margin-top:12px;}
+
+/* Admin modal */
+.admin-modal{display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;}
+.admin-modal.open{display:flex;}
+.admin-card{width:100%;max-width:320px;background:var(--sf);border:1px solid rgba(200,168,76,.25);border-radius:16px;padding:24px 22px;}
+.am-title{font-size:14px;font-weight:700;color:var(--cream);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.am-inp{width:100%;background:rgba(255,255,255,.05);border:1.5px solid var(--bd);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--cream);outline:none;margin-bottom:9px;font-family:'Noto Sans KR',sans-serif;-webkit-appearance:none;}
+.am-inp:focus{border-color:rgba(200,168,76,.4);}
+.am-inp::placeholder{color:var(--gray);font-size:11px;}
+.am-btns{display:flex;gap:8px;margin-top:4px;}
+.am-save{flex:1;background:linear-gradient(135deg,var(--gold),var(--gl));color:var(--bg);border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.am-cancel{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;padding:11px;font-size:13px;color:var(--gray2);cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.am-msg{font-size:11px;margin-top:8px;min-height:16px;text-align:center;}
+.am-msg.ok{color:var(--green);} .am-msg.err{color:#ef6c6c;}
+</style>
+</head>
+<body>
+<!-- ── LOGIN OVERLAY ── -->
+<div class="login-ov" id="loginOv">
+  <div class="login-card">
+    <div class="l-logo">HK</div>
+    <div class="l-title">한국클라우드</div>
+    <div class="l-sub">고객사 뉴스 브리핑 시스템<br>접근 권한이 있는 임직원만 사용 가능합니다</div>
+    <input type="password" id="lPw" class="l-inp" placeholder="비밀번호 입력"
+      maxlength="30" autocomplete="off"
+      onkeydown="if(event.key==='Enter') doLogin()"/>
+    <button class="l-btn" onclick="doLogin()">🔓 로그인</button>
+    <div class="l-err" id="lErr"></div>
+    <div class="l-hint">문의: 영업마케팅본부</div>
+  </div>
+</div>
+
+<!-- ── ADMIN MODAL ── -->
+<div class="admin-modal" id="adminModal">
+  <div class="admin-card">
+    <div class="am-title">🔐 비밀번호 변경</div>
+    <input type="password" id="amCur" class="am-inp" placeholder="현재 비밀번호" maxlength="30" autocomplete="off"/>
+    <input type="password" id="amNew1" class="am-inp" placeholder="새 비밀번호" maxlength="30" autocomplete="off"/>
+    <input type="password" id="amNew2" class="am-inp" placeholder="새 비밀번호 확인" maxlength="30" autocomplete="off"
+      onkeydown="if(event.key==='Enter') changePw()"/>
+    <div class="am-btns">
+      <button class="am-save" onclick="changePw()">변경</button>
+      <button class="am-cancel" onclick="closeAdmin()">취소</button>
+    </div>
+    <div class="am-msg" id="amMsg"></div>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="tl">
+      <div class="tlogo">HK</div>
+      <div><div class="tname">한국클라우드</div><div class="tsub">고객사 뉴스 브리핑</div></div>
+    </div>
+    <div class="tr">
+      <div class="tdate" id="tdEl"></div>
+      <span class="tmodel" id="tmEl">Claude</span>
+    </div>
+  </div>
+
+  <div class="status-bar" id="sbEl">
+    <div class="sdot sdot-warn" id="sdot"></div>
+    <div class="stxt" id="stxt">초기화 중...</div>
+  </div>
+
+  <!-- API Key input (shown when key missing) -->
+  <div id="keyInputArea" style="display:none;background:rgba(200,168,76,.08);border-bottom:1px solid rgba(200,168,76,.25);padding:12px 16px;flex-shrink:0;">
+    <div style="font-size:10px;color:var(--gold);font-weight:600;letter-spacing:1px;margin-bottom:8px;">🔑 CLAUDE API 키 입력</div>
+    <input type="password" id="apiKeyField" placeholder="sk-ant-api03-..." autocomplete="off"
+      style="width:100%;background:var(--bg);border:1.5px solid rgba(200,168,76,.3);border-radius:8px;padding:9px 11px;font-family:monospace;font-size:11px;color:var(--cream);outline:none;-webkit-appearance:none;margin-bottom:8px;box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter') saveApiKey()"/>
+    <button onclick="saveApiKey()"
+      style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gl));color:var(--bg);border:none;border-radius:10px;padding:12px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;">
+      🚀 저장 후 시작하기
+    </button>
+    <div style="font-size:10px;color:var(--gray);margin-top:7px;text-align:center;">
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--gold);">console.anthropic.com</a>에서 발급
+    </div>
+  </div>
+
+  <div class="search-area">
+    <div class="sa-row">
+      <input type="text" class="sinput" id="coInput" placeholder="고객사명 입력" maxlength="40" enterkeyhint="search"/>
+      <button class="sbtn" id="sBtn" onclick="run()">🔍</button>
+    </div>
+    <div class="u-row">
+      <span class="u-lbl">👤 담당자</span>
+      <input type="text" class="u-inp" id="uName" placeholder="이름 (선택)"/>
+    </div>
+  </div>
+
+  <div class="hist-bar" id="hBar" style="display:none"></div>
+
+  <div class="content" id="contentEl">
+    <div id="warnArea"></div>
+
+    <div class="empty-s" id="emptyEl">
+      <div class="ei">🗞️</div>
+      <div class="et">고객사를 검색하세요</div>
+      <div class="es">Claude AI가 최근 3개월 뉴스를<br>실시간 검색 후 영업 분석을 제공합니다</div>
+    </div>
+
+    <div class="loading-s" id="loadingEl">
+      <div class="sw"><div class="swo"></div><div class="swi"></div></div>
+      <div class="lco" id="lcoEl"></div>
+      <div class="psteps">
+        <div class="ps" id="ps1"><div class="psd"></div><span>Claude AI 뉴스 웹 검색 중...</span></div>
+        <div class="ps" id="ps2"><div class="psd"></div><span>영업 인사이트 분석 중...</span></div>
+        <div class="ps" id="ps3"><div class="psd"></div><span>브리핑 보고서 생성...</span></div>
+      </div>
+    </div>
+
+    <div class="err-s" id="errEl">
+      <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+      <div class="err-m" id="errMsg"></div>
+    </div>
+
+    <div class="report" id="reportEl"></div>
+  </div>
+
+  <div class="bottom-bar hidden" id="botBar">
+    <button class="bbtn bb-share" onclick="shareReport()">📤 공유</button>
+    <button class="bbtn bb-print" onclick="window.print()">🖨️ 인쇄</button>
+    <button class="bbtn bb-reset" onclick="resetApp()">← 새 검색</button>
+  </div>
+
+  <!-- 관리자 버튼 (항상 표시) -->
+  <div style="background:var(--sf);border-top:1px solid var(--bd);padding:8px 16px;padding-bottom:calc(8px + var(--sb));flex-shrink:0;">
+    <button onclick="document.getElementById('adminModal').classList.add('open')"
+      style="width:100%;background:none;border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px;font-size:11px;color:var(--gray);cursor:pointer;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">
+      🔐 관리자 — 비밀번호 변경
+    </button>
+  </div>
+
+</div>
+<script>
+let _data=null,_range='',_ok=false;
+
+/* ── Password Utils ── */
+async function sha256(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function getPwHash(){return localStorage.getItem('hkc_pw_hash');}
+function shakeL(id){
+  const e=document.getElementById(id);
+  e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');
+  e.style.borderColor='#ef6c6c';setTimeout(()=>e.style.borderColor='',1500);
+}
+
+/* ── Login ── */
+async function doLogin(){
+  const pw=document.getElementById('lPw').value;
+  if(!pw){shakeL('lPw');return;}
+  const h=await sha256(pw);
+  const stored=getPwHash();
+  if(!stored){shakeL('lPw');return;}
+  if(h===stored){
+    sessionStorage.setItem('hkc_auth','1');
+    const ov=document.getElementById('loginOv');
+    ov.classList.add('hide');
+    setTimeout(()=>ov.style.display='none',400);
+    document.getElementById('lPw').value='';
+  }else{
+    document.getElementById('lErr').textContent='비밀번호가 올바르지 않습니다.';
+    shakeL('lPw');
+    document.getElementById('lPw').value='';
+    document.getElementById('lPw').focus();
+    setTimeout(()=>document.getElementById('lErr').textContent='',3000);
+  }
+}
+
+/* ── 최초 실행 시 기본 비밀번호(hkc2025) 초기화 후 인증 확인 ── */
+(async function initAndCheck(){
+  if(!localStorage.getItem('hkc_pw_hash')){
+    const h=await sha256('hkc2025');
+    localStorage.setItem('hkc_pw_hash',h);
+  }
+  if(!sessionStorage.getItem('hkc_auth')){
+    document.getElementById('loginOv').style.display='flex';
+    setTimeout(()=>document.getElementById('lPw').focus(),150);
+  }else{
+    document.getElementById('loginOv').style.display='none';
+  }
+})();
+
+/* ── Admin Password Change ── */
+async function changePw(){
+  const cur=document.getElementById('amCur').value;
+  const n1=document.getElementById('amNew1').value;
+  const n2=document.getElementById('amNew2').value;
+  if(!cur||!n1||!n2){setAmMsg('err','모든 항목을 입력하세요.');return;}
+  if(n1.length<4){setAmMsg('err','4자 이상 입력하세요.');return;}
+  if(n1!==n2){setAmMsg('err','새 비밀번호가 일치하지 않습니다.');shakeL('amNew2');return;}
+  const ch=await sha256(cur);
+  if(ch!==getPwHash()){setAmMsg('err','현재 비밀번호가 틀렸습니다.');shakeL('amCur');return;}
+  localStorage.setItem('hkc_pw_hash',await sha256(n1));
+  document.getElementById('amCur').value='';
+  document.getElementById('amNew1').value='';
+  document.getElementById('amNew2').value='';
+  setAmMsg('ok','✔ 비밀번호가 변경되었습니다.');
+  setTimeout(()=>closeAdmin(),2000);
+}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('open');document.getElementById('amMsg').textContent='';}
+function setAmMsg(t,m){const e=document.getElementById('amMsg');e.className='am-msg '+t;e.textContent=m;}
+
+function saveApiKey(){
+  var k=document.getElementById('apiKeyField').value.trim();
+  if(!k){alert('API 키를 입력하세요.');return;}
+  if(!k.startsWith('sk-ant-')){alert('올바른 Claude API 키가 아닙니다.');return;}
+  localStorage.setItem('hkc_claude_key',k);
+  HKC_CONFIG.CLAUDE_API_KEY=k;
+  _ok=true;
+  document.getElementById('keyInputArea').style.display='none';
+  setSt('ok','Claude API 연결 완료');
+  document.getElementById('sBtn').disabled=false;
+  document.getElementById('warnArea').innerHTML='';
+}
+
+(function(){
+  const d=new Date();
+  document.getElementById('tdEl').innerHTML=d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'})+'<br><span style="color:var(--gold)">'+d.toLocaleDateString('ko-KR',{weekday:'short'})+'</span>';
+
+  document.getElementById('tmEl').textContent=mShort((HKC_CONFIG&&HKC_CONFIG.CLAUDE_MODEL)||'');
+
+  const hk=!!(HKC_CONFIG&&HKC_CONFIG.CLAUDE_API_KEY);
+  if(hk){
+    setSt('ok','Claude API 연결 완료'); _ok=true;
+  } else {
+    setSt('err','API 키를 입력하세요');
+    document.getElementById('keyInputArea').style.display='block';
+    document.getElementById('sBtn').disabled=true;
+    const saved=localStorage.getItem('hkc_claude_key')||'';
+    if(saved) document.getElementById('apiKeyField').value=saved;
+  }
+  if(window.location.protocol==='file:'){
+    // file://에서도 키 입력 후 사용 가능 — 차단하지 않음
+    document.getElementById('warnArea').innerHTML=`
+      <div style="background:rgba(200,168,76,.08);border:1px solid rgba(200,168,76,.2);border-radius:10px;padding:12px 16px;margin:12px 16px;font-size:11px;color:var(--gray2);line-height:1.7;">
+        💡 <strong style="color:var(--gl)">로컬 파일 실행 중</strong> — API 키 입력 후 바로 사용 가능합니다.
+      </div>`;
+  }
+  const sn=localStorage.getItem('hkc_username')||'';
+  if(sn) document.getElementById('uName').value=sn;
+  renderHBar();
+})();
+
+document.getElementById('coInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.target.blur();run();}});
+document.getElementById('uName').addEventListener('change',e=>localStorage.setItem('hkc_username',e.target.value.trim()));
+
+function setSt(t,m){document.getElementById('sdot').className='sdot sdot-'+t;document.getElementById('stxt').textContent=m;}
+function mShort(m){if(m.includes('opus'))return'Opus';if(m.includes('sonnet'))return'Sonnet';if(m.includes('haiku'))return'Haiku';return'Claude';}
+
+function showWarn(t){
+  const a=document.getElementById('warnArea');
+  if(t==='cors') a.innerHTML=`<div class="sys-warn"><div class="sw-title">⚠️ 직접 실행 불가</div><div class="sw-body">시작.bat 실행 후 아래 주소 접속:</div><div class="sw-step"><div class="sw-num">→</div><div class="sw-txt"><span class="mono-s">http://localhost:8787/index_mobile.html</span></div></div></div>`;
+  else if(t==='nokey') a.innerHTML=`<div class="sys-warn"><div class="sw-title">⚙️ API 키 설정 필요</div><div class="sw-body">config.js에 <strong>CLAUDE_API_KEY</strong>를 입력하세요.<br>관리자에게 문의하세요.</div></div>`;
+  else a.innerHTML=`<div class="sys-warn"><div class="sw-title">⚙️ config.js 없음</div><div class="sw-body">index_mobile.html과 같은 폴더에 config.js가 있어야 합니다.</div></div>`;
+}
+
+function getH(){try{return JSON.parse(localStorage.getItem('hkc_history')||'[]');}catch(_){return[];}}
+function addH(co){let h=getH().filter(x=>x.name!==co);h.unshift({name:co,ts:Date.now()});if(h.length>10)h=h.slice(0,10);localStorage.setItem('hkc_history',JSON.stringify(h));renderHBar();}
+function renderHBar(){const h=getH(),b=document.getElementById('hBar');if(!h.length){b.style.display='none';return;}b.style.display='flex';b.innerHTML=h.map(x=>`<div class="hchip" onclick="loadH('${x.name.replace(/'/g,"\\'")}')">🏢 ${x.name}</div>`).join('');}
+function loadH(n){document.getElementById('coInput').value=n;run();}
+
+function showState(s){
+  ['emptyEl','loadingEl','errEl','reportEl'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('botBar').classList.add('hidden');
+  if(s==='empty') document.getElementById('emptyEl').style.display='flex';
+  else if(s==='loading') document.getElementById('loadingEl').style.display='flex';
+  else if(s==='error') document.getElementById('errEl').style.display='block';
+  else if(s==='report'){document.getElementById('reportEl').style.display='block';document.getElementById('botBar').classList.remove('hidden');}
+}
+function setStep(n){[1,2,3].forEach(i=>{const e=document.getElementById('ps'+i);e.className='ps'+(i<n?' done':i===n?' active':'');});}
+function toggleSec(id){const b=document.getElementById('b_'+id),c=document.getElementById('c_'+id);const o=b.classList.contains('open');b.classList.toggle('open',!o);c.classList.toggle('open',!o);}
+
+async function run(){
+  if(!_ok) return;
+  const company=document.getElementById('coInput').value.trim();
+  if(!company){document.getElementById('coInput').style.borderColor='var(--red)';setTimeout(()=>document.getElementById('coInput').style.borderColor='',1200);return;}
+
+  const btn=document.getElementById('sBtn');
+  btn.disabled=true;btn.textContent='⏳';
+  document.getElementById('lcoEl').textContent=company;
+  showState('loading');setStep(1);
+
+  const today=new Date(),ago=new Date();ago.setMonth(today.getMonth()-(HKC_CONFIG.MONTHS_BACK||3));
+  const range=`${ago.toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'})} ~ ${today.toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'})}`;
+  _range=range;
+
+  const un=document.getElementById('uName').value.trim();
+  const co=HKC_CONFIG.COMPANY_NAME||'한국클라우드';
+  const biz=(HKC_CONFIG.HKC_BUSINESS||[]).join(' / ');
+
+  const sys=`당신은 ${co} 전략 영업 컨설턴트입니다.
+고객사 뉴스를 분석해 마케터가 미팅에서 바로 꺼낼 수 있는 핵심 포인트만 간결하게 작성합니다.
+
+${co} 솔루션: ${biz}
+
+작성 원칙:
+- 모든 항목은 1~2문장으로 간결하게
+- salesOpportunities 3개 이상 필수, keyTalkingPoints 5개 이상 필수
+- consultingPitch: 3문장 이내 핵심 메시지
+- 뉴스 없으면 업종 특성 기반으로 생성
+
+JSON만 출력. 백틱 금지.
+{"company":"","industry":"","riskLevel":"HIGH|MID|LOW","riskLabel":"한줄평가","executiveSummary":"핵심동향 2~3문장","newsItems":[{"importance":"critical|important|info|positive","headline":"","source":"","date":"","link":"","summary":"1~2문장"}],"salesOpportunities":[{"title":"솔루션명 포함 기회명","detail":"상황→기회→제안 1~2문장"}],"consultingPitch":"임원에게 전할 핵심 메시지 3문장 이내","actionItems":[{"priority":"HIGH|MID|LOW","action":"구체적 액션 1문장"}],"keyTalkingPoints":["질문형 대화 포인트 1문장"]}`;
+
+  try{
+    setStep(2);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':HKC_CONFIG.CLAUDE_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:HKC_CONFIG.CLAUDE_MODEL||'claude-haiku-4-5-20251001',
+        max_tokens:3500,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        system:sys,
+        messages:[{role:'user',content:`고객사: ${company} | 기간: ${range} | 담당자: ${un||'미지정'}\n\n"${company}" 최근 3개월 뉴스를 검색하세요. 뉴스 유무와 관계없이 salesOpportunities 3개 이상, keyTalkingPoints 5개 이상, consultingPitch를 반드시 작성하세요. 간결하고 명확하게.`}]
+      })
+    });
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      if(res.status===401) throw new Error('Claude API 키 오류. config.js 확인');
+      if(res.status===429) throw new Error('요청 한도 초과. 잠시 후 재시도');
+      throw new Error(`API 오류 (${res.status}): ${e?.error?.message||''}`);
+    }
+    const data=await res.json();
+    let raw='';
+    for(const b of (data.content||[])){ if(b.type==='text') raw+=b.text; }
+    setStep(3);
+    const brief=robustParse(raw);
+    if(!brief) throw new Error('AI 응답 파싱 실패');
+    _data=brief;
+    addH(company);
+    renderReport(brief,range,un,co);
+  }catch(err){
+    let msg=err.message;
+    if(msg==='Failed to fetch'||msg.includes('NetworkError')) msg=window.location.protocol==='file:'?'<strong>CORS 오류</strong><br>시작.bat 실행 후 localhost 접속':'네트워크 오류. 연결 확인';
+    document.getElementById('errMsg').innerHTML=msg;
+    showState('error');
+  }finally{btn.disabled=false;btn.textContent='🔍';}
+}
+
+function makeSec(id,icon,ic,name,badge,body,open){
+  return`<div class="sec"><div class="sec-toggle" onclick="toggleSec('${id}')"><div class="stl"><div class="sic ${ic}">${icon}</div><div class="sname">${name}</div></div><div class="str">${badge}<i class="chev${open?' open':''}" id="c_${id}">▼</i></div></div><div class="sec-body${open?' open':''}" id="b_${id}">${body}</div></div>`;
+}
+
+function renderReport(b,range,un,co){
+  const iM={critical:{dot:'nd-r',badge:'nb-crit',lbl:'긴급'},important:{dot:'nd-y',badge:'nb-imp',lbl:'중요'},info:{dot:'nd-b',badge:'nb-info',lbl:'참고'},positive:{dot:'nd-gr',badge:'nb-pos',lbl:'긍정'}};
+  const pM={HIGH:{cls:'ap-hi',lbl:'즉시'},MID:{cls:'ap-mid',lbl:'검토'},LOW:{cls:'ap-lo',lbl:'참고'}};
+  const rCls={HIGH:'hc-hi',MID:'hc-mid',LOW:'hc-lo'}[b.riskLevel]||'hc-mid';
+
+  const heroH=`<div class="hero"><div class="hero-badge">📋 HKC 영업 브리핑</div>
+    <div class="hero-co">${b.company}</div><div class="hero-ind">${b.industry||''}</div>
+    <div class="hero-chips"><div class="hc">📅 ${range}</div><div class="hc">📰 ${(b.newsItems||[]).length}건</div>
+    <div class="hc ${rCls}">⚡ ${b.riskLabel||b.riskLevel}</div>
+    <div class="hc hc-ai">🤖 ${mShort(HKC_CONFIG.CLAUDE_MODEL||'')}</div>
+    ${un?`<div class="hc">👤 ${un}</div>`:''}</div></div>`;
+
+  const sumH=makeSec('sum','📝','si-g','경영진 요약','',`<div class="sumbox">${b.executiveSummary}</div>`,true);
+
+  const pitchH=b.consultingPitch?makeSec('pitch','🎤','si-r','임원 미팅 오프닝 스피치','',
+    `<div style="background:linear-gradient(135deg,rgba(207,69,69,.08),rgba(200,168,76,.05));border:1px solid rgba(207,69,69,.25);border-left:3px solid #ef6c6c;border-radius:0 9px 9px 0;padding:13px 15px;font-size:13px;line-height:1.85;color:var(--cream);white-space:pre-wrap;">${b.consultingPitch}</div>`,true):'';
+
+  const newsC=(b.newsItems||[]).map(n=>{
+    const m=iM[n.importance]||iM.info;
+    const src=n.link?`<a href="${n.link}" target="_blank">${n.source||'기사'}</a>`:(n.source||'-');
+    return`<div class="nitem"><div class="ntop"><div class="ndot ${m.dot}"></div><div class="nhdr">
+      <div class="ntitle">${n.link?`<a href="${n.link}" target="_blank">${n.headline}</a>`:n.headline}</div>
+      <div class="nmeta"><span class="nsrc">${src}</span><span class="ndate">${n.date||''}</span><span class="nbadge ${m.badge}">${m.lbl}</span></div>
+    </div></div><div class="nbody">${n.summary}</div></div>`;
+  }).join('');
+  const newsH=makeSec('news','📰','si-b','최근 주요 뉴스',`<span class="sbadge sb-b">${(b.newsItems||[]).length}건</span>`,newsC,true);
+
+  const oppC=(b.salesOpportunities||[]).map((o,i)=>`<div class="oitem"><div class="onum">${i+1}</div><div class="otxt"><strong>${o.title}</strong>${o.detail}</div></div>`).join('');
+  const oppH=makeSec('opp','💼','si-gr','HKC 영업 기회',`<span class="sbadge sb-g">${(b.salesOpportunities||[]).length}개</span>`,oppC,true);
+
+  const actC=(b.actionItems||[]).map(a=>{const p=pM[a.priority]||pM.LOW;return`<div class="aitem"><div class="apri ${p.cls}">${p.lbl}</div><div class="atxt">${a.action}</div></div>`;}).join('');
+  const actH=makeSec('act','🎯','si-r','미팅 액션 플랜',`<span class="sbadge sb-y">${(b.actionItems||[]).length}개</span>`,actC,true);
+
+  const talkC=(b.keyTalkingPoints||[]).map(t=>`<div class="titem"><span style="color:var(--gold);flex-shrink:0">▶</span><span>${t}</span></div>`).join('');
+  const talkH=talkC?makeSec('talk','💬','si-g','핵심 대화 포인트','',talkC,false):'';
+
+  document.getElementById('reportEl').innerHTML=heroH+sumH+pitchH+newsH+oppH+actH+talkH;
+  showState('report');
+  document.getElementById('contentEl').scrollTop=0;
+}
+
+function robustParse(raw){
+  let s=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const st=s.indexOf('{'),en=s.lastIndexOf('}');
+  if(st<0||en<0) return null;
+  s=s.slice(st,en+1);
+  try{return JSON.parse(s);}catch(_){}
+  s=s.replace(/"((?:[^"\\]|\\.)*)"/gs,(m,inn)=>'"'+inn.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t')+'"');
+  try{return JSON.parse(s);}catch(_){}
+  s=s.replace(/,\s*([}\]])/g,'$1');
+  try{return JSON.parse(s);}catch(_){}
+  try{
+    const g=k=>{const m=s.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'));return m?m[1].replace(/\\n/g,' '):''};
+    const ga=k=>{const m=s.match(new RegExp(`"${k}"\\s*:\\s*(\\[[\\s\\S]*?\\])`, 's'));if(!m)return[];try{return JSON.parse(m[1].replace(/,\s*([}\]])/g,'$1'));}catch(_){return[];}};
+    return{company:g('company'),industry:g('industry'),riskLevel:g('riskLevel')||'MID',riskLabel:g('riskLabel')||'분석완료',executiveSummary:g('executiveSummary'),newsItems:ga('newsItems'),salesOpportunities:ga('salesOpportunities'),actionItems:ga('actionItems'),keyTalkingPoints:ga('keyTalkingPoints')};
+  }catch(_){return null;}
+}
+
+function shareReport(){
+  if(!_data) return;
+  const b=_data,d=_range,un=document.getElementById('uName').value.trim(),co=HKC_CONFIG.COMPANY_NAME||'한국클라우드';
+  const today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const H='━'.repeat(44),h='─'.repeat(44);
+  const PR={HIGH:'[즉시]',MID:'[검토]',LOW:'[참고]'},IM={critical:'[긴급]',important:'[중요]',info:'[참고]',positive:'[긍정]'};
+  let L=[];
+  L.push(H);L.push(` ${co} 고객사 영업 브리핑`);L.push(H);
+  L.push(` 고객사: ${b.company}  업종: ${b.industry||'-'}`);
+  L.push(` 기간: ${d}  작성일: ${today}`);
+  if(un) L.push(` 담당자: ${un}`);
+  L.push(` 등급: ${b.riskLabel||b.riskLevel}`);
+  L.push(H);L.push('');
+  L.push('▣ 경영진 요약');L.push(h);L.push(b.executiveSummary||'');L.push('');
+  L.push('▣ 최근 주요 뉴스');L.push(h);
+  (b.newsItems||[]).forEach((n,i)=>{L.push(`${i+1}. ${IM[n.importance]||'[참고]'} ${n.headline}`);L.push(`   ${n.source||'-'} ${n.date?'| '+n.date:''} ${n.link?'| '+n.link:''}`);L.push(`   ${n.summary||''}`);L.push('');});
+  L.push('▣ HKC 영업 기회');L.push(h);
+  (b.salesOpportunities||[]).forEach((o,i)=>{L.push(`${i+1}. ▶ ${o.title}`);L.push(`   ${o.detail||''}`);L.push('');});
+  L.push('▣ 미팅 액션 플랜');L.push(h);
+  (b.actionItems||[]).forEach((a,i)=>L.push(`${i+1}. ${PR[a.priority]||'[참고]'} ${a.action}`));
+  L.push('');
+  if((b.keyTalkingPoints||[]).length){L.push('▣ 핵심 대화 포인트');L.push(h);b.keyTalkingPoints.forEach((t,i)=>L.push(`${i+1}. ▶ ${t}`));L.push('');}
+  L.push(H);L.push(` ${co} 영업 지원 내부 자료 — CONFIDENTIAL`);L.push(H);
+  const txt=L.join('\n'),btn=document.querySelector('.bb-share');
+  if(navigator.share){navigator.share({title:`HKC 브리핑 — ${b.company}`,text:txt}).catch(()=>{});}
+  else{navigator.clipboard.writeText(txt).then(()=>{const o=btn.innerHTML;btn.innerHTML='✅ 복사!';setTimeout(()=>btn.innerHTML=o,2000);});}
+}
+function resetApp(){document.getElementById('coInput').value='';showState('empty');document.getElementById('coInput').focus();}
+function mShort(m){if(m.includes('opus'))return'Opus';if(m.includes('sonnet'))return'Sonnet';if(m.includes('haiku'))return'Haiku';return'Claude';}
+</script>
+</body>
+</html>
