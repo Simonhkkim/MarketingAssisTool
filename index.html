@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HKC 고객사 인텔리전스 브리핑</title>
+<script>
+// 앱 설정 — API 키는 UI에서 입력하여 브라우저(localStorage)에 저장됩니다
+(function(){
+  var saved = localStorage.getItem('hkc_claude_key') || '';
+  window.HKC_CONFIG = {
+    CLAUDE_API_KEY: saved,
+    CLAUDE_MODEL:   localStorage.getItem('hkc_model') || 'claude-haiku-4-5-20251001',
+    COMPANY_NAME:   '주식회사 한국클라우드',
+    DEPT_NAME:      '영업마케팅본부',
+    APP_VERSION:    '3.0',
+    MONTHS_BACK:    3,
+    MAX_TOKENS:     2500,
+    HKC_BUSINESS: [
+      '클라우드 인프라(IaaS/PaaS/SaaS) 구축·관리',
+      'AI/빅데이터 솔루션 구축',
+      '디지털 전환(DX) 컨설팅',
+      'IT 아웃소싱 및 관리형 서비스(MSP)',
+      '사이버보안 솔루션',
+      '전사적 업무자동화(AX)',
+      '전산 시스템 유지보수 및 운영'
+    ]
+  };
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1c2333;
+  --bd:rgba(255,255,255,.07);
+  --gold:#c8a84c; --gl:#e8c96a; --gd:rgba(200,168,76,.12);
+  --cream:#e8edf2; --muted:#7d8fa3; --muted2:#a8b8c8;
+  --red:#cf4545; --rd:rgba(207,69,69,.12);
+  --green:#3aaa70; --grd:rgba(58,170,112,.12);
+  --blue:#3a88c8; --bd2:rgba(58,136,200,.12);
+  --r:12px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;font-size:14px;}
+a{text-decoration:none;}
+
+/* ── Topbar ── */
+.topbar{height:60px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:200;box-shadow:0 1px 20px rgba(0,0,0,.4);}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gl) 40%,transparent);}
+.tb-l{display:flex;align-items:center;gap:16px;}
+.tb-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gl));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--bg);box-shadow:0 3px 12px rgba(200,168,76,.35);}
+.tb-name{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--cream);line-height:1.2;}
+.tb-sub{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.tb-div{width:1px;height:28px;background:var(--bd);}
+.tb-title{font-size:13px;color:var(--muted);}
+.tb-r{display:flex;align-items:center;gap:14px;}
+.tb-date{font-size:12px;color:var(--muted);text-align:right;line-height:1.6;}
+.tb-ver{font-size:10px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:4px;padding:3px 8px;}
+.tb-model{font-size:10px;color:#68b0e8;background:var(--bd2);border:1px solid rgba(58,136,200,.3);border-radius:4px;padding:3px 10px;font-weight:600;}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:340px 1fr;flex:1;min-height:calc(100vh - 60px);}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;}
+.sb-sec{padding:18px 22px;border-bottom:1px solid var(--bd);}
+.sb-lbl{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+
+/* Status */
+.cfg-ok {display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--grd);border:1px solid rgba(58,170,112,.25);border-radius:8px;font-size:12px;color:var(--green);}
+.cfg-err{display:flex;align-items:flex-start;gap:8px;padding:12px 14px;background:var(--rd);border:1px solid rgba(207,69,69,.3);border-radius:8px;font-size:12px;color:var(--red);line-height:1.5;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.dot-ok{background:var(--green);box-shadow:0 0 8px rgba(58,170,112,.6);}
+.dot-err{background:var(--red);box-shadow:0 0 8px rgba(207,69,69,.6);}
+
+/* Inputs */
+.inp{width:100%;background:rgba(255,255,255,.04);border:1.5px solid var(--bd);border-radius:8px;padding:9px 13px;font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--cream);outline:none;transition:border-color .2s;}
+.inp::placeholder{color:var(--muted);}
+.inp:focus{border-color:rgba(200,168,76,.5);}
+.co-inp{width:100%;background:rgba(255,255,255,.04);border:1.5px solid rgba(200,168,76,.3);border-radius:10px;padding:13px 16px;font-family:'Noto Sans KR',sans-serif;font-size:16px;color:var(--cream);outline:none;transition:all .25s;margin-bottom:10px;}
+.co-inp::placeholder{color:var(--muted);font-size:14px;}
+.co-inp:focus{border-color:var(--gold);background:rgba(200,168,76,.05);box-shadow:0 0 0 3px rgba(200,168,76,.1);}
+.run-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gl));color:var(--bg);border:none;border-radius:10px;padding:13px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px rgba(200,168,76,.3);}
+.run-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(200,168,76,.45);}
+.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* History */
+.hist-area{flex:1;overflow-y:auto;padding:14px 22px;}
+.hist-empty{text-align:center;padding:28px 0;font-size:12px;color:var(--muted);line-height:1.7;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:7px;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.02);}
+.hist-item:hover{background:rgba(200,168,76,.07);border-color:rgba(200,168,76,.25);}
+.hist-co{flex:1;font-size:13px;font-weight:500;color:var(--cream);}
+.hist-dt{font-size:10px;color:var(--muted);white-space:nowrap;}
+.hist-clr{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color .2s;}
+.hist-clr:hover{color:var(--red);}
+
+/* ── Main ── */
+.main{overflow-y:auto;padding:36px 48px;background:var(--bg);}
+
+/* Intro */
+.intro{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:18px;}
+.intro-icon{font-size:56px;opacity:.3;}
+.intro-title{font-family:'Noto Serif KR',serif;font-size:22px;color:var(--muted2);}
+.intro-sub{font-size:13px;color:var(--muted);line-height:1.85;max-width:400px;}
+.intro-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
+.intro-chip{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--muted);}
+
+/* CORS/Config warn */
+.sys-warn{background:linear-gradient(135deg,var(--rd),rgba(207,69,69,.05));border:1.5px solid rgba(207,69,69,.3);border-radius:14px;padding:28px 32px;margin-bottom:24px;}
+.sw-title{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--red);margin-bottom:14px;}
+.sw-step{display:flex;gap:14px;margin-top:14px;align-items:flex-start;}
+.sw-num{width:26px;height:26px;background:rgba(207,69,69,.2);border:1px solid rgba(207,69,69,.4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--red);flex-shrink:0;}
+.sw-txt{font-size:13px;color:var(--cream);line-height:1.7;}
+.mono{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:2px 8px;font-family:monospace;font-size:13px;color:var(--gl);display:inline-block;margin-top:4px;}
+.sw-note{margin-top:16px;padding:12px 16px;background:var(--gd);border:1px solid rgba(200,168,76,.2);border-radius:8px;font-size:12px;color:var(--gl);line-height:1.6;}
+
+/* Loading */
+.loading{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:28px;}
+.spin-wrap{position:relative;width:72px;height:72px;}
+.spin-o{width:72px;height:72px;border:2px solid rgba(200,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin 1.2s linear infinite;position:absolute;}
+.spin-i{width:52px;height:52px;border:2px solid rgba(200,168,76,.06);border-bottom-color:var(--gl);border-radius:50%;animation:spin .8s linear infinite reverse;position:absolute;top:10px;left:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.lco{font-family:'Noto Serif KR',serif;font-size:24px;color:var(--gold);}
+.psteps{display:flex;flex-direction:column;gap:10px;width:320px;}
+.ps{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;font-size:13px;color:var(--muted);border:1px solid transparent;transition:all .3s;}
+.ps.active{color:var(--cream);background:rgba(200,168,76,.08);border-color:rgba(200,168,76,.15);}
+.ps.done{color:var(--green);background:var(--grd);border-color:rgba(58,170,112,.2);}
+.psd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);flex-shrink:0;transition:all .3s;}
+.ps.active .psd{background:var(--gold);box-shadow:0 0 10px rgba(200,168,76,.7);animation:pulse .9s ease-in-out infinite alternate;}
+.ps.done .psd{background:var(--green);}
+@keyframes pulse{from{transform:scale(1);}to{transform:scale(1.6);}}
+
+/* Error */
+.err-state{display:none;background:var(--rd);border:1px solid rgba(207,69,69,.3);border-radius:var(--r);padding:32px;text-align:center;}
+.err-msg{font-size:14px;color:var(--cream);line-height:1.8;}
+
+/* Report */
+.report{display:none;animation:fadeUp .5s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* Print header */
+.print-hdr{display:none;}
+
+/* Report hero */
+.rpt-hero{border:1px solid rgba(200,168,76,.25);border-radius:16px;padding:28px 32px;margin-bottom:28px;background:linear-gradient(140deg,rgba(200,168,76,.09),rgba(200,168,76,.02) 60%,rgba(58,136,200,.04));position:relative;overflow:hidden;}
+.rpt-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gl) 50%,transparent);}
+.rpt-hero::after{content:'';position:absolute;top:3px;right:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gl),transparent);}
+.rpt-stamp{position:absolute;top:20px;right:24px;background:rgba(200,168,76,.1);border:1.5px solid rgba(200,168,76,.35);border-radius:5px;padding:4px 12px;font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.rpt-eye{font-size:10px;color:var(--gold);letter-spacing:2.5px;text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+.rpt-co{font-family:'Noto Serif KR',serif;font-size:36px;color:var(--cream);font-weight:700;line-height:1.2;margin-bottom:3px;}
+.rpt-ind{font-size:13px;color:var(--muted2);margin-bottom:16px;}
+.rpt-meta{display:flex;gap:9px;flex-wrap:wrap;}
+.mtag{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:20px;padding:4px 12px;}
+.t-hi{color:#ef6c6c;border-color:rgba(207,69,69,.3);background:var(--rd);}
+.t-mid{color:var(--gl);border-color:rgba(200,168,76,.3);background:var(--gd);}
+.t-lo{color:#5cc896;border-color:rgba(58,170,112,.3);background:var(--grd);}
+.t-ai{color:#68b0e8;border-color:rgba(58,136,200,.3);background:var(--bd2);}
+
+/* Sections */
+.rpt-sec{margin-bottom:24px;}
+.rpt-shdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd);}
+.rsic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.si-g{background:rgba(200,168,76,.15);}.si-b{background:rgba(58,136,200,.15);}.si-gr{background:rgba(58,170,112,.15);}.si-r{background:rgba(207,69,69,.15);}
+.rpt-stitle{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600;color:var(--cream);}
+.rpt-scnt{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:12px;font-weight:600;}
+.cnt-b{background:var(--bd2);color:#68b0e8;border:1px solid rgba(58,136,200,.3);}
+.cnt-g{background:var(--grd);color:#5cc896;border:1px solid rgba(58,170,112,.3);}
+.cnt-y{background:var(--gd);color:var(--gl);border:1px solid rgba(200,168,76,.3);}
+
+/* Summary */
+.exec-s{background:rgba(200,168,76,.06);border:1px solid rgba(200,168,76,.18);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:18px 22px;font-size:14px;line-height:1.9;color:var(--cream);white-space:pre-wrap;}
+
+/* News */
+.nlist{display:flex;flex-direction:column;gap:11px;}
+.ncard{background:rgba(255,255,255,.025);border:1px solid var(--bd);border-radius:var(--r);padding:16px 20px;transition:all .2s;}
+.ncard:hover{background:rgba(255,255,255,.04);border-color:rgba(200,168,76,.2);transform:translateX(4px);}
+.nc-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.ndot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.nd-r{background:#ef6c6c;box-shadow:0 0 8px rgba(239,108,108,.5);}
+.nd-y{background:var(--gold);box-shadow:0 0 8px rgba(200,168,76,.5);}
+.nd-b{background:#68b0e8;box-shadow:0 0 8px rgba(104,176,232,.5);}
+.nd-gr{background:#5cc896;box-shadow:0 0 8px rgba(92,200,150,.5);}
+.nc-bd{flex:1;}
+.nc-hl{font-size:13px;font-weight:600;color:var(--cream);line-height:1.5;margin-bottom:4px;}
+.nc-hl a{color:inherit;} .nc-hl a:hover{color:var(--gl);}
+.nc-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);}
+.nc-src{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:1px 7px;}
+.nc-src a{color:var(--gold);}
+.itag{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;}
+.it-crit{background:var(--rd);color:#ef6c6c;} .it-imp{background:var(--gd);color:var(--gl);} .it-info{background:var(--bd2);color:#68b0e8;} .it-pos{background:var(--grd);color:#5cc896;}
+.nc-summ{font-size:13px;color:var(--muted2);line-height:1.7;padding-left:18px;}
+
+/* Opportunities */
+.opp-box{background:rgba(58,170,112,.06);border:1px solid rgba(58,170,112,.18);border-radius:var(--r);padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+.oitem{display:flex;gap:12px;align-items:flex-start;}
+.onum{width:26px;height:26px;background:rgba(58,170,112,.2);border:1px solid rgba(58,170,112,.4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#5cc896;flex-shrink:0;}
+.otxt{font-size:13px;color:var(--cream);line-height:1.75;}
+.otxt strong{color:#5cc896;display:block;font-size:13px;margin-bottom:2px;}
+
+/* Actions */
+.alist{display:flex;flex-direction:column;gap:9px;}
+.aitem{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.025);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;transition:background .2s;}
+.aitem:hover{background:rgba(255,255,255,.04);}
+.apri{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:700;flex-shrink:0;}
+.p-hi{background:var(--rd);color:#ef6c6c;border:1px solid rgba(207,69,69,.3);}
+.p-mid{background:var(--gd);color:var(--gl);border:1px solid rgba(200,168,76,.3);}
+.p-lo{background:var(--bd2);color:#68b0e8;border:1px solid rgba(58,136,200,.3);}
+.atxt{font-size:13px;color:var(--cream);line-height:1.5;}
+
+/* Talk */
+.tlist{display:flex;flex-direction:column;gap:9px;}
+.titem{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.025);border:1px solid var(--bd);border-radius:10px;padding:13px 16px;font-size:13px;color:var(--cream);line-height:1.6;}
+.tarr{color:var(--gold);flex-shrink:0;font-size:14px;}
+
+/* Actions bar */
+.rpt-acts{display:flex;gap:10px;margin-top:28px;padding-top:22px;border-top:1px solid var(--bd);}
+.rbtn{display:flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.rbtn:active{transform:scale(.97);}
+.btn-back{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--muted2);display:flex;align-items:center;gap:7px;}
+.btn-back:hover{background:rgba(255,255,255,.08);color:var(--cream);}
+.btn-pr{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--cream);}
+.btn-pr:hover{background:rgba(255,255,255,.1);}
+.btn-cp{background:var(--gd);border:1px solid rgba(200,168,76,.35);color:var(--gl);}
+.btn-cp:hover{background:rgba(200,168,76,.2);}
+
+/* ── LOGIN OVERLAY ── */
+.login-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg, #0a0f1a 0%, #0d1117 50%, #111820 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-overlay.hide{animation:loginFade .4s ease forwards;}
+@keyframes loginFade{to{opacity:0;pointer-events:none;}}
+
+.login-box{
+  width:380px;
+  background:var(--bg2);
+  border:1px solid rgba(200,168,76,.25);
+  border-radius:20px;
+  padding:44px 40px;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(200,168,76,.1);
+  position:relative;overflow:hidden;
+}
+.login-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--gl),var(--gold));
+}
+.login-logo{
+  width:60px;height:60px;
+  background:linear-gradient(135deg,var(--gold),var(--gl));
+  border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--bg);
+  margin:0 auto 16px;
+  box-shadow:0 6px 20px rgba(200,168,76,.4);
+}
+.login-title{
+  font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;
+  color:var(--cream);margin-bottom:4px;
+}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
+
+.login-field{
+  width:100%;background:rgba(255,255,255,.05);
+  border:1.5px solid var(--bd);border-radius:10px;
+  padding:13px 16px;
+  font-family:'Noto Sans KR',sans-serif;font-size:15px;
+  color:var(--cream);outline:none;
+  transition:all .25s;margin-bottom:12px;
+  text-align:center;letter-spacing:4px;
+}
+.login-field::placeholder{letter-spacing:0;color:var(--muted);font-size:13px;}
+.login-field:focus{border-color:var(--gold);background:rgba(200,168,76,.05);box-shadow:0 0 0 3px rgba(200,168,76,.12);}
+.login-field.shake{animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}50%{transform:translateX(-4px);}85%{transform:translateX(4px);}}
+
+.login-btn{
+  width:100%;background:linear-gradient(135deg,var(--gold),var(--gl));
+  color:var(--bg);border:none;border-radius:10px;padding:14px;
+  font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .25s;
+  box-shadow:0 4px 16px rgba(200,168,76,.35);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(200,168,76,.5);}
+.login-btn:active{transform:translateY(0);}
+.login-err{font-size:12px;color:#ef6c6c;margin-top:10px;min-height:18px;}
+.login-hint{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;}
+
+/* ── ADMIN PANEL ── */
+.admin-panel{padding:16px 22px;border-top:1px solid var(--bd);}
+.admin-toggle{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:11px;color:var(--muted);font-weight:500;
+  padding:6px 0;user-select:none;
+  transition:color .2s;
+}
+.admin-toggle:hover{color:var(--muted2);}
+.admin-body{display:none;margin-top:12px;}
+.admin-body.open{display:block;animation:fadeUp .2s ease;}
+.admin-inp{
+  width:100%;background:rgba(255,255,255,.04);
+  border:1.5px solid var(--bd);border-radius:8px;
+  padding:9px 12px;font-family:'Noto Sans KR',sans-serif;
+  font-size:13px;color:var(--cream);outline:none;
+  transition:border-color .2s;margin-bottom:8px;
+}
+.admin-inp:focus{border-color:rgba(200,168,76,.4);}
+.admin-inp::placeholder{color:var(--muted);font-size:11px;}
+.admin-save{
+  width:100%;background:rgba(200,168,76,.15);
+  border:1px solid rgba(200,168,76,.3);border-radius:8px;
+  padding:9px;font-family:'Noto Sans KR',sans-serif;
+  font-size:12px;font-weight:600;color:var(--gl);cursor:pointer;
+  transition:all .2s;
+}
+.admin-save:hover{background:rgba(200,168,76,.25);}
+.admin-msg{font-size:11px;margin-top:7px;min-height:16px;text-align:center;}
+.admin-msg.ok{color:var(--green);} .admin-msg.err{color:#ef6c6c;}
+
+/* ── PRINT ── */
+@media print {
+  @page{size:A4 portrait;margin:16mm 15mm 18mm 15mm;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-shadow:none!important;}
+  html,body,div,section,aside,main,article{background:#fff!important;color:#1a1a2e!important;}
+  html,body{font-size:10.5pt;}
+  .topbar,.sidebar,.rpt-acts{display:none!important;}
+  .layout{display:block!important;background:#fff!important;}
+  .main{padding:0!important;overflow:visible!important;background:#fff!important;}
+  .print-hdr{display:flex!important;align-items:center;justify-content:space-between;padding-bottom:10pt;border-bottom:2.5pt solid #c8a84c;margin-bottom:14pt;background:#fff!important;}
+  .ph-logo{display:flex;align-items:center;gap:10px;}
+  .ph-dot{width:32px;height:32px;background:#c8a84c!important;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#0d1117!important;font-size:13px;}
+  .ph-co{font-size:12pt;font-weight:700;color:#1a1a2e!important;}
+  .ph-dept{font-size:8pt;color:#7a5c1e!important;letter-spacing:1px;}
+  .ph-date{text-align:right;font-size:9pt;color:#666!important;line-height:1.6;}
+  .report{background:#fff!important;}
+  .rpt-hero{background:#f8f5ee!important;border:1.5pt solid #c8a84c!important;padding:14pt 18pt!important;margin-bottom:14pt!important;page-break-inside:avoid;border-radius:5pt!important;}
+  .rpt-hero::before,.rpt-hero::after{display:none;}
+  .rpt-stamp{background:#f0e8d0!important;border:1pt solid #c8a84c!important;color:#7a5c1e!important;font-size:8pt!important;}
+  .rpt-eye{color:#7a5c1e!important;font-size:8pt!important;}
+  .rpt-co{color:#1a1a2e!important;font-size:22pt!important;}
+  .rpt-ind{color:#555!important;}
+  .mtag{background:#f0f0f0!important;border-color:#ccc!important;color:#444!important;font-size:8pt!important;}
+  .t-hi{background:#fde8e8!important;color:#c0392b!important;border-color:#c0392b!important;}
+  .t-mid{background:#fdf3dc!important;color:#7a5c1e!important;border-color:#c8a84c!important;}
+  .t-lo{background:#e8fdf0!important;color:#1a6e40!important;border-color:#27ae60!important;}
+  .t-ai{background:#e8f4fd!important;color:#1a6fa0!important;border-color:#2980b9!important;}
+  .rpt-sec{margin-bottom:12pt!important;page-break-inside:avoid;background:#fff!important;}
+  .rpt-shdr{background:#f8f5ee!important;border-bottom:1pt solid #c8a84c!important;padding:6pt 10pt!important;border-radius:3pt 3pt 0 0!important;margin-bottom:10pt!important;}
+  .rsic{display:none!important;}
+  .rpt-stitle{color:#1a1a2e!important;font-size:11pt!important;}
+  .exec-s{background:#fdf9f0!important;border-left:3pt solid #c8a84c!important;border:1pt solid #e8dfc0!important;color:#1a1a2e!important;font-size:10pt!important;padding:10pt 14pt!important;}
+  .nlist{background:#fff!important;}
+  .ncard{background:#fafafa!important;border:1pt solid #ddd!important;page-break-inside:avoid;padding:8pt 12pt!important;}
+  .nc-hl{color:#1a1a2e!important;font-size:10pt!important;}
+  .nc-summ,.nc-meta{color:#555!important;font-size:9pt!important;}
+  .ndot{display:none!important;}
+  .nc-src{background:#f0f0f0!important;border-color:#ccc!important;color:#555!important;} .nc-src a{color:#1a6fa0!important;}
+  .it-crit{background:#fde8e8!important;color:#c0392b!important;} .it-imp{background:#fdf3dc!important;color:#7a5c1e!important;} .it-info{background:#e8f4fd!important;color:#1a6fa0!important;} .it-pos{background:#e8fdf0!important;color:#1a6e40!important;}
+  .opp-box{background:#f0faf5!important;border:1pt solid #a8dfc0!important;padding:10pt 14pt!important;}
+  .onum{background:#d0f0e0!important;border-color:#27ae60!important;color:#1a6e40!important;}
+  .otxt{color:#1a1a2e!important;} .otxt strong{color:#1a6e40!important;}
+  .alist{background:#fff!important;}
+  .aitem{background:#fafafa!important;border:1pt solid #ddd!important;page-break-inside:avoid;}
+  .atxt{color:#1a1a2e!important;}
+  .p-hi{background:#fde8e8!important;color:#c0392b!important;} .p-mid{background:#fdf3dc!important;color:#7a5c1e!important;} .p-lo{background:#e8f4fd!important;color:#1a6fa0!important;}
+  .tlist{background:#fff!important;}
+  .titem{background:#fafafa!important;border:1pt solid #ddd!important;color:#1a1a2e!important;}
+  .tarr{color:#c8a84c!important;}
+  .report::after{content:'본 보고서는 한국클라우드(HKC) 영업 지원 목적의 내부 자료입니다 — CONFIDENTIAL';display:block;margin-top:18pt;padding-top:8pt;border-top:1pt solid #ccc;font-size:8pt;color:#999;text-align:center;background:#fff!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">HK</div>
+    <div class="login-title">한국클라우드</div>
+    <div class="login-sub">고객사 뉴스 브리핑 시스템<br>접근 권한이 있는 임직원만 사용 가능합니다</div>
+    <input type="password" id="loginPw" class="login-field"
+      placeholder="비밀번호를 입력하세요"
+      maxlength="30" autocomplete="off"
+      onkeydown="if(event.key==='Enter') doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">
+      🔓 로그인
+    </button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-hint">문의: 영업마케팅본부</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="tb-l">
+    <div class="tb-logo">HK</div>
+    <div>
+      <div class="tb-name">한국클라우드</div>
+      <div class="tb-sub">Customer Intelligence</div>
+    </div>
+    <div class="tb-div"></div>
+    <span class="tb-title">고객사 뉴스 브리핑 시스템</span>
+  </div>
+  <div class="tb-r">
+    <div class="tb-date" id="tbDate"></div>
+    <span class="tb-model" id="tbModel">Claude AI</span>
+    <span class="tb-ver" id="tbVer">v3.0</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-sec">
+      <div class="sb-lbl">🔧 시스템 상태</div>
+      <div id="cfgStatus"></div>
+      <!-- API Key 직접 입력 -->
+      <div id="keyInputBox" style="display:none; margin-top:12px;">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;font-weight:600;margin-bottom:8px;">🔑 Claude API 키 입력</div>
+        <input type="password" id="apiKeyField" placeholder="sk-ant-api03-..." autocomplete="off"
+          style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(200,168,76,.3);border-radius:8px;padding:9px 12px;font-family:monospace;font-size:11px;color:var(--cream);outline:none;margin-bottom:9px;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter') saveApiKey()"/>
+        <button onclick="saveApiKey()" id="startBtn"
+          style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gl));color:var(--bg);border:none;border-radius:10px;padding:13px;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 16px rgba(200,168,76,.35);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;">
+          🚀 저장 후 시작하기
+        </button>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;text-align:center;">
+          키 발급: <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--gold);">console.anthropic.com</a>
+          &nbsp;·&nbsp; 이 브라우저에만 저장됩니다
+        </div>
+      </div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">👤 담당 마케터</div>
+      <input type="text" id="userName" class="inp" placeholder="이름을 입력하세요 (선택)"/>
+    </div>
+    <div class="sb-sec" style="padding-bottom:0;border-bottom:none;">
+      <div class="sb-lbl" style="margin-bottom:10px;">🔍 고객사 검색</div>
+      <input type="text" id="coInput" class="co-inp" placeholder="고객사명 입력 (예: 삼성전자)" maxlength="50"/>
+      <button class="run-btn" id="runBtn" onclick="run()">
+        <span id="runIcon">🔍</span>
+        <span id="runLabel">뉴스 브리핑 생성</span>
+      </button>
+    </div>
+    <div class="sb-sec" style="padding-bottom:8px;">
+      <div class="sb-lbl">
+        📋 최근 검색
+        <button class="hist-clr" onclick="clearHistory()">🗑 삭제</button>
+      </div>
+    </div>
+    <div class="hist-area" id="histArea">
+      <div class="hist-empty">검색 기록이 없습니다</div>
+    </div>
+
+    <!-- 관리자 패널 -->
+    <div class="admin-panel">
+      <div class="admin-toggle" onclick="toggleAdmin()">
+        <span>🔐</span>
+        <span>관리자 — 비밀번호 변경</span>
+        <span id="adminChev" style="margin-left:auto;font-size:10px;">▼</span>
+      </div>
+      <div class="admin-body" id="adminBody">
+        <input type="password" id="adminCurPw" class="admin-inp" placeholder="현재 비밀번호" maxlength="30" autocomplete="off"/>
+        <input type="password" id="adminNewPw" class="admin-inp" placeholder="새 비밀번호" maxlength="30" autocomplete="off"/>
+        <input type="password" id="adminNewPw2" class="admin-inp" placeholder="새 비밀번호 확인" maxlength="30" autocomplete="off"
+          onkeydown="if(event.key==='Enter') changePassword()"/>
+        <button class="admin-save" onclick="changePassword()">비밀번호 변경</button>
+        <div class="admin-msg" id="adminMsg"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="mainEl">
+
+    <div id="sysWarnArea"></div>
+
+    <!-- Intro -->
+    <div class="intro" id="introEl">
+      <div class="intro-icon">🗞️</div>
+      <div class="intro-title">고객사 인텔리전스 브리핑</div>
+      <div class="intro-sub">고객사명을 입력하면 Claude AI가 최근 3개월<br>뉴스를 실시간 검색하고 영업 관점으로 분석합니다</div>
+      <div class="intro-chips">
+        <span class="intro-chip">🌐 실시간 웹 검색</span>
+        <span class="intro-chip">🤖 Claude AI 분석</span>
+        <span class="intro-chip">🖨️ A4 PDF 인쇄</span>
+        <span class="intro-chip">📋 텍스트 복사</span>
+        <span class="intro-chip">📜 검색 기록</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loadingEl">
+      <div class="spin-wrap">
+        <div class="spin-o"></div>
+        <div class="spin-i"></div>
+      </div>
+      <div class="lco" id="lcoEl"></div>
+      <div class="psteps">
+        <div class="ps" id="ps1"><div class="psd"></div><span>Claude AI가 최신 뉴스 웹 검색 중...</span></div>
+        <div class="ps" id="ps2"><div class="psd"></div><span>HKC 영업 관점으로 뉴스 분석 중...</span></div>
+        <div class="ps" id="ps3"><div class="psd"></div><span>브리핑 보고서 최종 생성 중...</span></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="err-state" id="errEl">
+      <div style="font-size:40px;margin-bottom:14px">⚠️</div>
+      <div class="err-msg" id="errMsg"></div>
+    </div>
+
+    <!-- Report -->
+    <div class="report" id="reportEl"></div>
+
+  </main>
+</div>
+
+<script>
+/* ── Globals ── */
+let _data = null, _range = '';
+const MAX_H = 15;
+
+/* ── Password Utilities ── */
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function getStoredHash(){
+  return localStorage.getItem('hkc_pw_hash');
+}
+
+/* ── Login ── */
+async function doLogin(){
+  const pw = document.getElementById('loginPw').value;
+  if(!pw){ shakeField('loginPw'); return; }
+  const h = await sha256(pw);
+  const stored = getStoredHash();
+  if(!stored){ shakeField('loginPw'); return; } // 초기화 대기
+  if(h === stored){
+    sessionStorage.setItem('hkc_auth','1');
+    const overlay = document.getElementById('loginOverlay');
+    overlay.classList.add('hide');
+    setTimeout(()=>overlay.style.display='none', 400);
+    document.getElementById('loginPw').value = '';
+  } else {
+    document.getElementById('loginErr').textContent = '비밀번호가 올바르지 않습니다.';
+    shakeField('loginPw');
+    document.getElementById('loginPw').value = '';
+    document.getElementById('loginPw').focus();
+    setTimeout(()=>document.getElementById('loginErr').textContent='', 3000);
+  }
+}
+function shakeField(id){
+  const el = document.getElementById(id);
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  el.style.borderColor='#ef6c6c';
+  setTimeout(()=>el.style.borderColor='',1500);
+}
+
+/* ── 최초 실행 시 기본 비밀번호(hkc2025) 초기화 후 인증 확인 ── */
+(async function initAndCheck(){
+  if(!localStorage.getItem('hkc_pw_hash')){
+    const h = await sha256('hkc2025');
+    localStorage.setItem('hkc_pw_hash', h);
+  }
+  // 인증 상태 확인
+  if(!sessionStorage.getItem('hkc_auth')){
+    document.getElementById('loginOverlay').style.display = 'flex';
+    setTimeout(()=>document.getElementById('loginPw').focus(), 150);
+  } else {
+    document.getElementById('loginOverlay').style.display = 'none';
+  }
+})();
+
+/* ── Admin Panel ── */
+function toggleAdmin(){
+  const body = document.getElementById('adminBody');
+  const chev = document.getElementById('adminChev');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  chev.textContent = open ? '▼' : '▲';
+}
+async function changePassword(){
+  const cur  = document.getElementById('adminCurPw').value;
+  const nw1  = document.getElementById('adminNewPw').value;
+  const nw2  = document.getElementById('adminNewPw2').value;
+  const msg  = document.getElementById('adminMsg');
+
+  if(!cur||!nw1||!nw2){ setAdminMsg('err','모든 항목을 입력하세요.'); return; }
+  if(nw1.length < 4){ setAdminMsg('err','비밀번호는 4자 이상이어야 합니다.'); return; }
+  if(nw1 !== nw2){ setAdminMsg('err','새 비밀번호가 일치하지 않습니다.'); shakeField('adminNewPw2'); return; }
+
+  const curH = await sha256(cur);
+  if(curH !== getStoredHash()){ setAdminMsg('err','현재 비밀번호가 올바르지 않습니다.'); shakeField('adminCurPw'); return; }
+
+  const newH = await sha256(nw1);
+  localStorage.setItem('hkc_pw_hash', newH);
+  document.getElementById('adminCurPw').value = '';
+  document.getElementById('adminNewPw').value = '';
+  document.getElementById('adminNewPw2').value = '';
+  setAdminMsg('ok','✔ 비밀번호가 변경되었습니다.');
+}
+function setAdminMsg(type, text){
+  const el = document.getElementById('adminMsg');
+  el.className = 'admin-msg ' + type;
+  el.textContent = text;
+  if(type === 'ok') setTimeout(()=>el.textContent='', 3000);
+}
+
+/* ── API Key Save (UI input fallback) ── */
+function saveApiKey(){
+  var k = document.getElementById('apiKeyField').value.trim();
+  if(!k){ alert('API 키를 입력하세요.'); return; }
+  if(!k.startsWith('sk-ant-')){ alert('올바른 Claude API 키가 아닙니다.\nsk-ant- 로 시작해야 합니다.'); return; }
+  localStorage.setItem('hkc_claude_key', k);
+  HKC_CONFIG.CLAUDE_API_KEY = k;
+  document.getElementById('keyInputBox').style.display = 'none';
+  document.getElementById('cfgStatus').innerHTML = '<div class="cfg-ok"><div class="dot dot-ok"></div>API 키 저장 완료 · 준비됨</div>';
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('sysWarnArea').innerHTML = '';
+  showState('intro');
+}
+
+/* ── Init ── */
+(function(){
+  if(typeof HKC_CONFIG==='undefined'){
+    showSysWarn('noconfig');
+    return;
+  }
+
+  // Date/version
+  const d = new Date();
+  document.getElementById('tbDate').innerHTML =
+    d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}) +
+    '&nbsp;&nbsp;<span style="color:var(--gold)">' +
+    d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + '</span>';
+  document.getElementById('tbVer').textContent  = `v${HKC_CONFIG.APP_VERSION||'3.0'}`;
+  document.getElementById('tbModel').textContent = modelShort(HKC_CONFIG.CLAUDE_MODEL||'claude-haiku-4-5-20251001');
+
+  // Config status
+  const hasKey = !!(HKC_CONFIG && HKC_CONFIG.CLAUDE_API_KEY);
+  const cfgEl  = document.getElementById('cfgStatus');
+  if(hasKey){
+    cfgEl.innerHTML = `<div class="cfg-ok"><div class="dot dot-ok"></div>Claude API 연결 완료 · 준비됨</div>`;
+    document.getElementById('keyInputBox').style.display = 'none';
+  } else {
+    cfgEl.innerHTML = `<div class="cfg-err"><div class="dot dot-err"></div>API 키가 없습니다. 아래에 입력하세요.</div>`;
+    document.getElementById('keyInputBox').style.display = 'block';
+    document.getElementById('runBtn').disabled = true;
+    // 이전에 저장한 키 자동 채우기
+    const saved = localStorage.getItem('hkc_claude_key') || '';
+    if(saved) document.getElementById('apiKeyField').value = saved;
+  }
+
+  // CORS 안내 (file://에서도 키 입력은 가능하게 유지)
+  if(window.location.protocol === 'file:'){
+    document.getElementById('sysWarnArea').innerHTML = `
+      <div style="background:rgba(200,168,76,.08);border:1px solid rgba(200,168,76,.2);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:12px;color:var(--muted2);line-height:1.7;">
+        💡 <strong style="color:var(--gl)">로컬 파일로 실행 중</strong> —
+        API 키를 입력하고 시작하면 됩니다.<br>
+        더 빠른 실행을 원하면 <strong>시작.bat</strong>을 사용하거나
+        <a href="https://pages.github.com" target="_blank" style="color:var(--gold)">GitHub Pages</a>에 배포하세요.
+      </div>`;
+    // file://에서도 runBtn은 활성화 유지 (API 키만 있으면 작동)
+  }
+
+  // Saved name
+  const sn = localStorage.getItem('hkc_username')||'';
+  if(sn) document.getElementById('userName').value = sn;
+
+  renderHistory();
+})();
+
+function modelShort(m){
+  if(m.includes('opus'))  return 'Claude Opus';
+  if(m.includes('sonnet'))return 'Claude Sonnet';
+  if(m.includes('haiku')) return 'Claude Haiku';
+  return 'Claude AI';
+}
+
+document.getElementById('coInput').addEventListener('keydown', e=>{ if(e.key==='Enter') run(); });
+document.getElementById('userName').addEventListener('change', e=>{
+  localStorage.setItem('hkc_username', e.target.value.trim());
+});
+
+/* ── Sys Warnings ── */
+function showSysWarn(type){
+  const area = document.getElementById('sysWarnArea');
+  if(type==='cors'){
+    area.innerHTML = `<div class="sys-warn">
+      <div class="sw-title">⚠️ 브라우저 보안 정책(CORS) 차단 안내</div>
+      <p style="font-size:13px;color:var(--cream);line-height:1.7">HTML 파일을 탐색기에서 직접 열면 API 호출이 차단됩니다.<br><strong>시작.bat</strong>을 더블클릭해 로컬 서버로 실행하세요.</p>
+      <div class="sw-step"><div class="sw-num">①</div><div class="sw-txt"><strong>시작.bat 더블클릭</strong> (같은 폴더)</div></div>
+      <div class="sw-step"><div class="sw-num">②</div><div class="sw-txt">또는 cmd에서: <span class="mono">python -m http.server 8787</span><br>→ <span style="color:var(--gl)">http://localhost:8787/index_pc.html</span> 접속</div></div>
+      <div class="sw-note">💡 Python 미설치: <a href="https://www.python.org/downloads/" target="_blank" style="color:var(--gold)">python.org/downloads</a> — <strong>"Add Python to PATH"</strong> 체크 필수</div>
+    </div>`;
+  } else if(type==='nokey'){
+    area.innerHTML = `<div class="sys-warn">
+      <div class="sw-title">⚙️ Claude API 키 설정 필요</div>
+      <div class="sw-step"><div class="sw-num">1</div><div class="sw-txt">같은 폴더의 <strong>config.js</strong>를 메모장으로 열기</div></div>
+      <div class="sw-step"><div class="sw-num">2</div><div class="sw-txt"><span class="mono">CLAUDE_API_KEY: 'sk-ant-...'</span> 입력 후 저장</div></div>
+      <div class="sw-step"><div class="sw-num">3</div><div class="sw-txt">브라우저 새로고침 (F5)</div></div>
+      <div class="sw-note">🔑 키 발급: <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--gold)">console.anthropic.com/settings/keys</a></div>
+    </div>`;
+  } else if(type==='noconfig'){
+    document.getElementById('introEl').style.display='none';
+    area.innerHTML = `<div class="sys-warn">
+      <div class="sw-title">⚙️ config.js 파일을 찾을 수 없습니다</div>
+      <p style="font-size:13px;color:var(--cream);line-height:1.7">index_pc.html과 config.js가 같은 폴더에 있어야 합니다.</p>
+    </div>`;
+    document.getElementById('runBtn').disabled = true;
+  }
+}
+
+/* ── State ── */
+function showState(s){
+  ['introEl','loadingEl','errEl','reportEl'].forEach(id=>document.getElementById(id).style.display='none');
+  if(s==='intro')   document.getElementById('introEl').style.display='flex';
+  if(s==='loading') document.getElementById('loadingEl').style.display='flex';
+  if(s==='error')   document.getElementById('errEl').style.display='block';
+  if(s==='report')  document.getElementById('reportEl').style.display='block';
+}
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('ps'+i);
+    el.className='ps'+(i<n?' done':i===n?' active':'');
+  });
+}
+
+/* ── History ── */
+function getH(){ try{return JSON.parse(localStorage.getItem('hkc_history')||'[]');}catch(_){return[];} }
+function addH(co){
+  let h=getH().filter(x=>x.name!==co);
+  h.unshift({name:co,ts:Date.now()});
+  if(h.length>MAX_H) h=h.slice(0,MAX_H);
+  localStorage.setItem('hkc_history',JSON.stringify(h));
+  renderHistory();
+}
+function clearHistory(){ localStorage.removeItem('hkc_history'); renderHistory(); }
+function renderHistory(){
+  const h=getH(), area=document.getElementById('histArea');
+  if(!h.length){ area.innerHTML='<div class="hist-empty">검색 기록이 없습니다</div>'; return; }
+  const now=Date.now();
+  const fmt=ts=>{ const d=now-ts; if(d<60000)return'방금'; if(d<3600000)return Math.floor(d/60000)+'분 전'; if(d<86400000)return Math.floor(d/3600000)+'시간 전'; return new Date(ts).toLocaleDateString('ko-KR',{month:'short',day:'numeric'}); };
+  area.innerHTML=h.map(x=>`<div class="hist-item" onclick="loadH('${x.name.replace(/'/g,"\\'")}')"><span>🏢</span><span class="hist-co">${x.name}</span><span class="hist-dt">${fmt(x.ts)}</span></div>`).join('');
+}
+function loadH(name){ document.getElementById('coInput').value=name; run(); }
+
+/* ── Main Run ── */
+async function run(){
+  const company = document.getElementById('coInput').value.trim();
+  if(!company){ flash('coInput'); return; }
+
+  const apiKey = HKC_CONFIG.CLAUDE_API_KEY;
+  if(!apiKey){ showSysWarn('nokey'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled=true;
+  document.getElementById('runIcon').textContent='⏳';
+  document.getElementById('runLabel').textContent='분석 중...';
+  document.getElementById('lcoEl').textContent=company;
+  showState('loading'); setStep(1);
+
+  const today = new Date();
+  const ago   = new Date(); ago.setMonth(today.getMonth()-(HKC_CONFIG.MONTHS_BACK||3));
+  const range = `${ago.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})} ~ ${today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})}`;
+  _range = range;
+
+  const userName = document.getElementById('userName').value.trim();
+  const biz = (HKC_CONFIG.HKC_BUSINESS||[]).map(b=>`- ${b}`).join('\n');
+  const co  = HKC_CONFIG.COMPANY_NAME||'한국클라우드';
+  const dept= HKC_CONFIG.DEPT_NAME||'영업마케팅본부';
+
+  const sysPrompt = `당신은 ${co} 전략 영업 컨설턴트입니다.
+고객사 뉴스를 분석해 마케터가 미팅에서 바로 꺼낼 수 있는 핵심 포인트만 간결하게 작성합니다.
+
+${co} 솔루션: ${(HKC_CONFIG.HKC_BUSINESS||[]).join(' / ')}
+
+작성 원칙:
+- 모든 항목은 1~2문장으로 간결하게
+- 두루뭉술한 표현 금지, 고객 상황에 딱 맞는 포인트만
+- salesOpportunities 3개 이상 필수 (뉴스 없으면 업종 특성 기반으로 생성)
+- keyTalkingPoints 5개 이상 필수, 질문형으로 작성
+- consultingPitch: 3문장 이내 핵심 메시지
+
+뉴스 → 영업 연결:
+디지털전환·AI투자→클라우드·AI / 비용절감→MSP·AX / 보안이슈→사이버보안 / 시스템노후→클라우드전환 / 인력부족→아웃소싱·자동화
+
+JSON만 출력. 백틱 금지.
+{"company":"","industry":"","riskLevel":"HIGH|MID|LOW","riskLabel":"한줄평가","executiveSummary":"핵심동향 2~3문장","newsItems":[{"importance":"critical|important|info|positive","headline":"","source":"","date":"","link":"","summary":"1~2문장"}],"salesOpportunities":[{"title":"솔루션명 포함 기회명","detail":"상황→기회→제안 1~2문장"}],"consultingPitch":"임원에게 전할 핵심 메시지 3문장 이내","actionItems":[{"priority":"HIGH|MID|LOW","action":"구체적 액션 1문장"}],"keyTalkingPoints":["질문형 대화 포인트 1문장"]}`;
+
+  const userPrompt = `고객사: ${company} | 기간: ${range} | 담당자: ${userName||'미지정'}
+
+"${company}" 최근 3개월 뉴스를 검색하세요.
+뉴스 유무와 관계없이 salesOpportunities 3개 이상, keyTalkingPoints 5개 이상, consultingPitch를 반드시 작성하세요.
+간결하고 날카롭게, 마케터가 내일 미팅에서 바로 쓸 수 있게 작성하세요.`;
+
+  try {
+    setStep(2);
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: HKC_CONFIG.CLAUDE_MODEL || 'claude-haiku-4-5-20251001',
+        max_tokens: 3500,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: sysPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if(!res.ok){
+      const e = await res.json().catch(()=>({}));
+      if(res.status===401) throw new Error('Claude API 키가 유효하지 않습니다.<br>config.js의 CLAUDE_API_KEY를 확인하세요.');
+      if(res.status===429) throw new Error('API 요청 한도 초과. 잠시 후 다시 시도해 주세요.');
+      if(res.status===400) throw new Error(`요청 오류 (400): ${e?.error?.message||'모델명을 확인하세요.'}`);
+      throw new Error(`API 오류 (${res.status}): ${e?.error?.message||''}`);
+    }
+
+    const data = await res.json();
+    // Extract text from content blocks
+    let raw = '';
+    for(const block of (data.content||[])){
+      if(block.type==='text') raw += block.text;
+    }
+
+    setStep(3);
+
+    const brief = robustParse(raw);
+    if(!brief) throw new Error('AI 응답 파싱 실패. 다시 시도해 주세요.');
+
+    _data = brief;
+    addH(company);
+    renderReport(brief, range, userName, co, dept);
+
+  } catch(err){
+    let msg = err.message;
+    if(msg==='Failed to fetch'||msg.includes('NetworkError')||msg.includes('network')){
+      msg = window.location.protocol==='file:'
+        ? `<strong>CORS 오류</strong> — 로컬 파일 직접 실행 불가<br><br>
+           <strong>시작.bat</strong> 더블클릭 후 <span style="color:var(--gl)">http://localhost:8787/index_pc.html</span> 접속하세요.`
+        : '네트워크 오류. 인터넷 연결을 확인해 주세요.';
+    }
+    document.getElementById('errMsg').innerHTML = msg;
+    showState('error');
+  } finally {
+    btn.disabled=false;
+    document.getElementById('runIcon').textContent='🔍';
+    document.getElementById('runLabel').textContent='뉴스 브리핑 생성';
+  }
+}
+
+/* ── Render ── */
+function renderReport(b, range, userName, co, dept){
+  const iMap={critical:{dot:'nd-r',tag:'it-crit',lbl:'긴급'},important:{dot:'nd-y',tag:'it-imp',lbl:'중요'},info:{dot:'nd-b',tag:'it-info',lbl:'참고'},positive:{dot:'nd-gr',tag:'it-pos',lbl:'긍정'}};
+  const pMap={HIGH:{cls:'p-hi',lbl:'즉시'},MID:{cls:'p-mid',lbl:'검토'},LOW:{cls:'p-lo',lbl:'참고'}};
+  const rCls={HIGH:'t-hi',MID:'t-mid',LOW:'t-lo'}[b.riskLevel]||'t-mid';
+  const today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const modelLabel = modelShort(HKC_CONFIG.CLAUDE_MODEL||'');
+
+  const newsH=(b.newsItems||[]).map(n=>{
+    const m=iMap[n.importance]||iMap.info;
+    const src=n.link?`<a href="${n.link}" target="_blank">${n.source||'기사보기'}</a>`:(n.source||'-');
+    return `<div class="ncard"><div class="nc-top"><div class="ndot ${m.dot}"></div><div class="nc-bd">
+      <div class="nc-hl">${n.link?`<a href="${n.link}" target="_blank">${n.headline}</a>`:n.headline}</div>
+      <div class="nc-meta"><span class="nc-src">${src}</span><span>${n.date||''}</span><span class="itag ${m.tag}">${m.lbl}</span></div>
+    </div></div><div class="nc-summ">${n.summary}</div></div>`;
+  }).join('');
+
+  const oppH=(b.salesOpportunities||[]).map((o,i)=>
+    `<div class="oitem"><div class="onum">${i+1}</div><div class="otxt"><strong>${o.title}</strong>${o.detail}</div></div>`
+  ).join('');
+
+  const actH=(b.actionItems||[]).map(a=>{
+    const p=pMap[a.priority]||pMap.LOW;
+    return`<div class="aitem"><div class="apri ${p.cls}">${p.lbl}</div><div class="atxt">${a.action}</div></div>`;
+  }).join('');
+
+  const talkH=(b.keyTalkingPoints||[]).map(t=>
+    `<div class="titem"><span class="tarr">▶</span><span>${t}</span></div>`
+  ).join('');
+
+  document.getElementById('reportEl').innerHTML = `
+    <div class="print-hdr">
+      <div class="ph-logo"><div class="ph-dot">HK</div><div><div class="ph-co">${co}</div><div class="ph-dept">${dept}</div></div></div>
+      <div class="ph-date">영업 인텔리전스 브리핑<br>${today}${userName?' · '+userName:''}</div>
+    </div>
+
+    <div class="rpt-hero">
+      <div class="rpt-stamp">CONFIDENTIAL</div>
+      <div class="rpt-eye">HKC 영업 인텔리전스 브리핑</div>
+      <div class="rpt-co">${b.company}</div>
+      <div class="rpt-ind">${b.industry||''}</div>
+      <div class="rpt-meta">
+        <div class="mtag">📅 ${range}</div>
+        <div class="mtag">📰 뉴스 ${(b.newsItems||[]).length}건</div>
+        <div class="mtag ${rCls}">⚡ ${b.riskLabel||b.riskLevel}</div>
+        <div class="mtag t-ai">🤖 ${modelLabel}</div>
+        ${userName?`<div class="mtag">👤 ${userName}</div>`:''}
+        <div class="mtag">📆 ${today}</div>
+      </div>
+    </div>
+
+    <div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic si-g">📝</div><div class="rpt-stitle">경영진 요약 (Executive Summary)</div></div>
+      <div class="exec-s">${b.executiveSummary}</div>
+    </div>
+
+    ${b.consultingPitch ? `
+    <div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic" style="background:rgba(207,69,69,.15)">🎤</div><div class="rpt-stitle">임원 미팅 오프닝 스피치 (3분 피치)</div></div>
+      <div style="background:linear-gradient(135deg,rgba(207,69,69,.08),rgba(200,168,76,.05));border:1px solid rgba(207,69,69,.25);border-left:4px solid #ef6c6c;border-radius:0 10px 10px 0;padding:18px 22px;font-size:14px;line-height:1.9;color:var(--cream);white-space:pre-wrap;">${b.consultingPitch}</div>
+    </div>` : ''}
+
+    <div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic si-b">📰</div><div class="rpt-stitle">최근 주요 뉴스</div><span class="rpt-scnt cnt-b">${(b.newsItems||[]).length}건</span></div>
+      <div class="nlist">${newsH}</div>
+    </div>
+
+    <div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic si-gr">💼</div><div class="rpt-stitle">HKC 영업 기회 분석</div><span class="rpt-scnt cnt-g">${(b.salesOpportunities||[]).length}개 발굴</span></div>
+      <div class="opp-box">${oppH}</div>
+    </div>
+
+    <div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic si-r">🎯</div><div class="rpt-stitle">미팅 액션 플랜</div><span class="rpt-scnt cnt-y">${(b.actionItems||[]).length}개</span></div>
+      <div class="alist">${actH}</div>
+    </div>
+
+    ${talkH?`<div class="rpt-sec">
+      <div class="rpt-shdr"><div class="rsic si-g">💬</div><div class="rpt-stitle">핵심 대화 포인트</div></div>
+      <div class="tlist">${talkH}</div>
+    </div>`:''}
+
+    <div class="rpt-acts">
+      <button class="rbtn btn-back" onclick="goBack()">← 새 검색</button>
+      <button class="rbtn btn-pr" onclick="window.print()">🖨️ PDF 인쇄</button>
+      <button class="rbtn btn-cp" id="copyBtn" onclick="copyReport()">📋 텍스트 복사</button>
+    </div>`;
+
+  showState('report');
+  document.getElementById('mainEl').scrollTop = 0;
+}
+
+/* ── Copy ── */
+function copyReport(){
+  if(!_data) return;
+  const b=_data, d=_range;
+  const today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const un=document.getElementById('userName').value.trim();
+  const co=HKC_CONFIG.COMPANY_NAME||'한국클라우드';
+  const H='━'.repeat(52), h='─'.repeat(52);
+  const PR={HIGH:'[즉시]',MID:'[검토]',LOW:'[참고]'};
+  const IM={critical:'[긴급]',important:'[중요]',info:'[참고]',positive:'[긍정]'};
+  let L=[];
+  L.push(H); L.push(`  ${co} 고객사 영업 인텔리전스 브리핑`); L.push(H);
+  L.push(`  고객사: ${b.company}   업종: ${b.industry||'-'}`);
+  L.push(`  분석기간: ${d}   작성일: ${today}`);
+  if(un) L.push(`  담당자: ${un}`);
+  L.push(`  영업등급: ${b.riskLabel||b.riskLevel}   AI: ${modelShort(HKC_CONFIG.CLAUDE_MODEL||'')}`);
+  L.push(H); L.push('');
+  L.push('▣ 경영진 요약'); L.push(h); L.push(b.executiveSummary||''); L.push('');
+  L.push('▣ 최근 주요 뉴스'); L.push(h);
+  (b.newsItems||[]).forEach((n,i)=>{
+    L.push(`${i+1}. ${IM[n.importance]||'[참고]'} ${n.headline}`);
+    L.push(`   출처: ${n.source||'-'} ${n.date?'| '+n.date:''} ${n.link?'| '+n.link:''}`);
+    L.push(`   ${n.summary||''}`); L.push('');
+  });
+  L.push('▣ HKC 영업 기회'); L.push(h);
+  (b.salesOpportunities||[]).forEach((o,i)=>{ L.push(`${i+1}. ▶ ${o.title}`); L.push(`   ${o.detail||''}`); L.push(''); });
+  L.push('▣ 미팅 액션 플랜'); L.push(h);
+  (b.actionItems||[]).forEach((a,i)=>L.push(`${i+1}. ${PR[a.priority]||'[참고]'} ${a.action}`));
+  L.push('');
+  if((b.keyTalkingPoints||[]).length){ L.push('▣ 핵심 대화 포인트'); L.push(h); b.keyTalkingPoints.forEach((t,i)=>L.push(`${i+1}. ▶ ${t}`)); L.push(''); }
+  L.push(H); L.push(`  본 보고서는 ${co} 영업 지원 목적 내부 자료입니다 — CONFIDENTIAL`); L.push(H);
+  const txt=L.join('\n');
+  const btn=document.getElementById('copyBtn');
+  navigator.clipboard.writeText(txt).then(()=>{
+    const orig=btn.innerHTML;
+    btn.innerHTML='✅ 복사 완료!';
+    btn.style.cssText='background:rgba(58,170,112,.2);border-color:rgba(58,170,112,.4);color:#5cc896;';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.cssText='';},2500);
+  }).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  });
+}
+
+/* ── Utils ── */
+function robustParse(raw){
+  let s=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const st=s.indexOf('{'),en=s.lastIndexOf('}');
+  if(st<0||en<0) return null;
+  s=s.slice(st,en+1);
+  try{return JSON.parse(s);}catch(_){}
+  s=s.replace(/"((?:[^"\\]|\\.)*)"/gs,(m,inn)=>'"'+inn.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t')+'"');
+  try{return JSON.parse(s);}catch(_){}
+  s=s.replace(/,\s*([}\]])/g,'$1');
+  try{return JSON.parse(s);}catch(_){}
+  try{
+    const g=k=>{const m=s.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'));return m?m[1].replace(/\\n/g,' '):''};
+    const ga=k=>{const m=s.match(new RegExp(`"${k}"\\s*:\\s*(\\[[\\s\\S]*?\\])`, 's'));if(!m)return[];try{return JSON.parse(m[1].replace(/,\s*([}\]])/g,'$1'));}catch(_){return[];}};
+    return{company:g('company'),industry:g('industry'),riskLevel:g('riskLevel')||'MID',riskLabel:g('riskLabel')||'분석완료',executiveSummary:g('executiveSummary'),newsItems:ga('newsItems'),salesOpportunities:ga('salesOpportunities'),actionItems:ga('actionItems'),keyTalkingPoints:ga('keyTalkingPoints')};
+  }catch(_){return null;}
+}
+function flash(id){const el=document.getElementById(id);el.style.borderColor='var(--red)';setTimeout(()=>el.style.borderColor='',1500);el.focus();}
+function modelShort(m){if(m.includes('opus'))return'Claude Opus';if(m.includes('sonnet'))return'Claude Sonnet';if(m.includes('haiku'))return'Claude Haiku';return'Claude AI';}
+function goBack(){
+  showState('intro');
+  document.getElementById('coInput').focus();
+  document.getElementById('mainEl').scrollTop = 0;
+}
+</script>
+</body>
+</html>
